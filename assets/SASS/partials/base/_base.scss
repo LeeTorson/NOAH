@@ -1,21 +1,21 @@
 *, *:before, *:after {
-	-moz-box-sizing: border-box; 
-		-webkit-box-sizing: border-box; 
+	-moz-box-sizing: border-box;
+		-webkit-box-sizing: border-box;
 			box-sizing: border-box;
 }
 
-html { 
-	font-size: 100%; 
-	-webkit-text-size-adjust: 100%; 
-	-ms-text-size-adjust: 100%; 
+html {
+	font-size: 100%;
+	-webkit-text-size-adjust: 100%;
+	-ms-text-size-adjust: 100%;
 }
 
 body {
-	color: $standard;
+	color: $col-standard;
 	font-family: $base-font-family;
 	font-size: $base-font-size;
 	line-height: $base-line-height;
-	margin: 0;	
+	margin: 0;
 }
 
 .container {
@@ -38,10 +38,7 @@ body {
 
 h1, h2, h3, h4, h5, h6,
 .h1, .h2, .h3, .h4, .h5, .h6 {
-	color: $header;
 	font-family: $header-font-family;
-	font-weight: $header-weight;
-	margin:1em 0 0.35em 0;
 }
 
 h1, .h1 {
@@ -95,20 +92,6 @@ p {
 img, object, embed {
 	height: auto;
 	max-width: 100%;
-}	
-
-blockquote {
-	background: #d8544b;
-	color: #ffffff;
-	font-size: 1.1em;
-	font-style: italic;
-	margin: 0 0 1.250em 1.250em;
-	padding: 0.625em 1.250em 1.250em;
-	p {
-		&:last-child {
-			margin-bottom: 0;
-		}
-	}
 }
 
 
@@ -116,21 +99,22 @@ blockquote {
 ------------------------------------------ */
 
 a {
-	color: $link;
+	color: $col-link;
 	cursor: pointer;
 	text-decoration:none;
+	transition: color 0.3s ease;
 	outline: 0;
 	&:visited {
 
 	}
 	&:hover {
-		color: $link-hover;
+		color: $col-link-hover;
 	}
 	&:active {
-		
+
 	}
 	&:focus {
-		
+
 	}
 	/* Improve readability when focused and hovered in all browsers: h5bp.com/h */
 	&:focus,
@@ -150,3 +134,31 @@ a {
 .center-align {
 	text-align: center;
 }
+
+/**
+ * For modern browsers
+ * 1. The space content is one way to avoid an Opera bug when the
+ *    contenteditable attribute is included anywhere else in the document.
+ *    Otherwise it causes space to appear at the top and bottom of elements
+ *    that are clearfixed.
+ * 2. The use of `table` rather than `block` is only necessary if using
+ *    `:before` to contain the top-margins of child elements.
+ */
+.cf:before,
+.cf:after {
+    content: " "; /* 1 */
+    display: table; /* 2 */
+}
+
+.cf:after {
+    clear: both;
+}
+
+/**
+ * For IE 6/7 only
+ * Include this rule to trigger hasLayout and contain floats.
+ */
+.cf {
+    *zoom: 1;
+}
+
