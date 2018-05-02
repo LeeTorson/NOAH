@@ -11,6 +11,12 @@ var uglify = require('gulp-uglify');
 var imagemin = require('gulp-imagemin');
 var notify = require('gulp-notify');
 var svgSymbols = require('gulp-svg-symbols');
+var browserify = require('browserify');
+var babelify = require('babelify');
+var glob = require("glob")
+
+var buffer = require('vinyl-buffer');
+var source = require('vinyl-source-stream'); 
 
 var paths = {
 	assets: {
@@ -24,6 +30,8 @@ var paths = {
 		img: '../site/img/'
 	}
 };
+
+var JSfiles = glob.sync(paths.assets.js + '*.js');
 
 // If you are running the site with a different webserver change this to the URL of the site e.g. localhost:8888
 var proxy = '';
@@ -80,9 +88,10 @@ gulp.task('styles:deploy', function () {
 		}));
 });
 
-gulp.task('scripts:dev', function() {
-	return gulp.src([paths.assets.js + 'plugins.js', paths.assets.js + 'script.js', paths.assets.js + 'dev.js'])
-	    .pipe(jshint())
+gulp.task('scripts:lint', function() {
+
+	return gulp.src(JSfiles)
+		.pipe(jshint())
     	.pipe(jshint.reporter('jshint-stylish'))
     	.pipe(notify(function (file) {
 		    if (file.jshint.success) {
@@ -96,29 +105,47 @@ gulp.task('scripts:dev', function() {
 		    	}
 		    }).join("\n");
 		    return file.relative + " (" + file.jshint.results.length + " errors)\n" + errors;
-		}))
-    	.pipe(sourcemaps.init())
-    		.pipe(concat('script.js'))
-    	.pipe(sourcemaps.write())
-    	.pipe(gulp.dest(paths.output.js))
-    	.pipe(notify({
-			title: 'Noah',
-			message: 'Scripts task complete.'
 		}));
 });
 
-gulp.task('scripts:deploy', function() {
-	return gulp.src([paths.assets.js + 'plugins.js', paths.assets.js + 'script.js'])
-		.pipe(jshint())
-		.pipe(jshint.reporter('jshint-stylish'))
-		.pipe(jshint.reporter('fail'))
-		.pipe(concat('script.js'))
-		.pipe(uglify())
-		.pipe(gulp.dest(paths.output.js))
-		.pipe(notify({
+gulp.task('scripts:bundle', function () {
+
+  // set up the browserify instance on a task basis
+  var b = browserify({
+    entries: JSfiles,
+    debug: true
+  });
+
+  return b.transform(babelify, { presets: ['env'], plugins: [] })
+  	.bundle()
+  	.on('error', function(e) {
+      console.error(e.message);
+      this.emit('end');
+    })
+    .pipe(source('script.js'))
+    .pipe(buffer())
+    .pipe(sourcemaps.init({loadMaps: true}))
+        // Add transformation tasks to the pipeline here.
+        .on('error', function(e) {notify({
 			title: 'Noah',
-			message: 'Scripts deployment task complete.'
-		}));
+			message: e.message
+		})})
+    .pipe(sourcemaps.write('./'))
+    .pipe(gulp.dest(paths.output.js));
+});
+
+gulp.task('scripts:deploy', function() {
+  // set up the browserify instance on a task basis
+  var b = browserify({
+    entries: [paths.assets.js + 'script.js', paths.assets.js + 'plugins.js']
+  });
+
+  return b.transform(babelify, { presets: ['env'], plugins: [] })
+  	.bundle()
+    .pipe(source('script.js'))
+    .pipe(buffer())
+    .pipe(uglify())
+    .pipe(gulp.dest(paths.output.js));
 });
 
 gulp.task('templates', function() {
@@ -135,7 +162,7 @@ gulp.task('images', function() {
 	}));
 });
 
-gulp.task('default', ['scripts:dev', 'styles:dev', 'sprites'], function () {
+gulp.task('default', ['scripts:lint', 'scripts:bundle', 'styles:dev', 'sprites'], function () {
 	var settings = {};
 	if(proxy !== '') {
 		settings.proxy = proxy;
@@ -147,12 +174,12 @@ gulp.task('default', ['scripts:dev', 'styles:dev', 'sprites'], function () {
 	// Watch Img folder for SVGs
     gulp.watch(paths.output.img + '*.svg', ['sprites']);
 	// Watch .js files
-	gulp.watch(paths.assets.js + '**/*.js', ['scripts:dev']);
+	gulp.watch(paths.assets.js + '**/*.js', ['scripts:lint', 'scripts:bundle']);
 	// Watch .scss files
 	gulp.watch(paths.assets.css + '/**/*.scss', ['styles:dev']);
 	// Watch .html files
-	gulp.watch(paths.assets.html + 'views/*.{php,html,cshtml}', ['templates']);
+	gulp.watch([paths.assets.html + 'Views/*.{php,html,cshtml}', paths.assets.html + 'index.{php,html,cshtml}'], ['templates']);
 
 });
 
-gulp.task('deploy', ['scripts:deploy', 'styles:deploy', 'images', 'sprites']);
+gulp.task('deploy', ['scripts:lint', 'scripts:deploy', 'styles:deploy', 'sprites']);
